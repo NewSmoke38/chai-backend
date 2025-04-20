@@ -3,11 +3,11 @@ import mongooseAggregatePaginate from
 const videoSchema = new Schema(
     {
         videoFile: {
-            type: String,    // clodinary url se aayega
+            type: String,    // cloudinary url se aayega
             required: true
         },
         thumbnail: {
-            type: String,    // clodinary url se aayega
+            type: String,    // cloudinary url se aayega
             required: true
         },
         
