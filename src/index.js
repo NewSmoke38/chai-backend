@@ -2,6 +2,7 @@
 
 import dotenv from "dotenv"
 import connectDB from "./db/index.js"
+import app from './app.js'
 
 // in this nicer approach we import from the DB file and only execute here. 
 // better
@@ -23,7 +24,7 @@ connectDB()
 
     app.listen(process.env.PORT || 8000, () => {   // fir app listen karega 
         console.log(` Server is running at port :     
-            ${process.env.PORT}`);                 // fir app ek message degad
+            ${process.env.PORT}`);                 // fir app ek message dega
     });
 
 })

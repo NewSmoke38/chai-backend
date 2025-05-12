@@ -7,7 +7,7 @@ const app = express()
 
 // some express configurations
 
-// app.use is used for mainly configurations and middleware
+// app.use is used for mainly main configurations and middleware
 app.use(cors({
     origin: process.env.CORS_ORIGIN,
     credentials: true
@@ -23,4 +23,31 @@ app.use(express.urlencoded({extended: true, limit: "16kb"}))   // extended here 
 app.use(express.static("public"))
 
 app.use(cookieParser())
-export { app }
+
+
+
+// routes import
+
+
+import userRouter from './routes/user.routes.js'
+
+
+
+
+
+// routes declaration
+app.use("/api/v1/users", userRouter)       // using middle ware use as we have now seperated files routes and controllers
+/// client asks for users, server gives acces to userRouter from userRouter.js
+
+// so yaha se url kaise banega?
+// http://localhost:8000/api/v1/users/register
+
+
+
+
+
+
+
+
+
+export default app;
