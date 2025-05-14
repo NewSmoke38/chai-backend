@@ -2,6 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js"
 import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
+import { ApiResponse } from "../utils/ApiResponse.js";
 
 //ye method hazaro baar likhna hai
 // method toh bana diya, method run kab ho???, some url needs to be hit, routes come in picture
@@ -28,7 +29,7 @@ const registerUser = asyncHandler(async (req, res) => {
   // validation that its not coming empty for multiple things at a time
    if (
          [fullName, email, username, password].some((field) => 
-       field?.trim() === "" )
+       field?.trim() === "" )            // some means agar kisi bhi field ko trim krne ke baad(trimming the whitespace) "" se equal hojata hai that means it will show error
    ) {
         throw new ApiError(400, "All fields are required")
    }
@@ -36,8 +37,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
    // checking is user already exists
    // ya toh ye email mil jaaye ya toh ye username mil jaaye, if match hojaye then user already exists
- const existedUser = User.findOne({
-      $or: [{ username }, { email }]
+ const existedUser = await User.findOne({
+      $or: [{ username }, { email }]        // user selection me we find at least one of them if match then
    })
 
    if (existedUser) {
@@ -48,14 +49,27 @@ const registerUser = asyncHandler(async (req, res) => {
 
    //check for any images or avatar coming from client
    // multer gave us files ka access
-
-   const avatarLocalPath = req.files?.avatar[0]?.path       // mutler has already taken the file from client
+   
+   
+   const avatarLocalPath = req.files?.avatar[0]?.path;      // mutler has already taken the file from client
     // kyunki we've told multer to put stuff from thier destination w original names
-   const coverImageLocalPath = req.files?.coverImage[0]?.path;
+   //const coverImageLocalPath = req.files?.coverImage[0]?.path;
+   //console.log((req.files));
+
+   let coverImageLocalPath;
+   if (req.files && Array.isArray(req.files            // files hai ya nhi, then wo array hai ya nhi, then uski length 0 se zayada hai ya nhi
+   .coverImage) && req.files.coverImage.length > 0) {
+
+      coverImageLocalPath = req.files.coverImage[0].path       // agar hai toh uske 0th element(yaani ki wahi) me se path nikal lo
+
+   }
+
 
    if (!avatarLocalPath) {
          throw new ApiError(400, "Avatar file is required")
    }
+
+   
 
 
    // uploading to cloudinary
@@ -70,11 +84,33 @@ const registerUser = asyncHandler(async (req, res) => {
    }
 
   // db me entry krwado user ki, make a user object there
-  User.create({
-    fullname,
+  // db se baat krne me errors aajate hai, so async will handle it, so we must await kyunki bhai time to lagega hi
+ const user = await User.create({
+    fullName,
     avatar: avatar.url,
     coverImage: coverImage?.url || "",
+    email,
+    password,             // as it is 
+    username: username.toLowerCase()  // should be in lowercase 
   })
+  
+ 
+  // check if user object created
+  // and remove refresh token from response
+  const createdUser = await User.findById(user._id).select(        // _id hrr user ke saath khud hi lag jata hai
+      "-password -refreshToken"  // ham wo minus karenge jo hame response me nhi dena hai user ko, cause every thing will go if we wont sepcify
+  )
+
+  if (!createdUser) {
+     throw new ApiError(500, "SOmething went wron while registering the user")
+  }
+  
+
+  // return response
+  return res.status(201).json(
+   new ApiResponse(200, createdUser, "User registered successfully!!")
+  )
+
 
 
 }) 
