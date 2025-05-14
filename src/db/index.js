@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { DB_NAME } from "../constants.js";
 
-
+// try catch method is always best
 const connectDB = async () => {
     try {
         const connectionInstance = await mongoose.connect
