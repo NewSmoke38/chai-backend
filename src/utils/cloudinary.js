@@ -25,8 +25,9 @@ import { isNull } from "util";
                 resource_type: "auto"  // which type of file is it pic, vid..know yourself
             })
             // file has been uploaded successfully
-            console.log("File is uploaded on Cloudinary", 
-                response.url);
+            //console.log("File is uploaded on Cloudinary", 
+               // response.url);
+                fs.unlinkSync(localFilePath)
                 return response;
                 
             
