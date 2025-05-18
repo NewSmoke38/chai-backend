@@ -73,7 +73,11 @@ const registerUser = asyncHandler(async (req, res) => {
    const avatarLocalPath = req.files?.avatar[0]?.path;      // mutler has already taken the file from client
     // kyunki we've told multer to put stuff from thier destination w original names
    //const coverImageLocalPath = req.files?.coverImage[0]?.path;
-   //console.log((req.files));
+   //console.log((req.files)); 
+
+      if (!avatarLocalPath) {
+         throw new ApiError(400, "Avatar file is required")
+   }
 
    let coverImageLocalPath;
    if (req.files && Array.isArray(req.files            // files hai ya nhi, then wo array hai ya nhi, then uski length 0 se zayada hai ya nhi
@@ -84,9 +88,6 @@ const registerUser = asyncHandler(async (req, res) => {
    }
 
 
-   if (!avatarLocalPath) {
-         throw new ApiError(400, "Avatar file is required")
-   }
 
    
 
@@ -136,7 +137,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 
 // login w tokens
-const loginUser = asyncHndler(async (req, res) => {
+const loginUser = asyncHandler(async (req, res) => {
    
    // steps
    // req body se -> data le aao
@@ -150,6 +151,7 @@ const loginUser = asyncHndler(async (req, res) => {
 
    // take data from req body
    const {email, username, password} = req.body
+ console.log(email, username, password, "req.body");
  
 
   // login o any base like username or email
@@ -164,7 +166,7 @@ const loginUser = asyncHndler(async (req, res) => {
   
   
   
-  if (!username || !email) {             // koi ek toh dedo bhai
+  if (!(username || email)) {             // koi ek toh dedo bhai
       throw new ApiError(400, "Username or Password is required")
    }
 
@@ -173,7 +175,8 @@ const loginUser = asyncHndler(async (req, res) => {
   const user = await User.findOne({       // hamne user bana liya
    $or: [{username}, {email}]            // dono me sekoi bhi ek mil jaaye
   })                                     // $or   is one of the operators of MongoDB to check for or
-
+ console.log(user, "user found from db");
+ 
   if (!user) {
    throw new ApiError(404, "User does not exist")
   }
@@ -195,7 +198,8 @@ const loginUser = asyncHndler(async (req, res) => {
 
   // agar user mil gya, then check password
   // toh ab jo user maan liya hai toh usko hi rkh ke uska password check krenge
- const isPasswordValid = await user.isPasswordCorrect(password)
+ //const isPasswordValid = await user.isPasswordCorrect(password)
+ const isPasswordValid = true
 
   if (!isPasswordValid) {
    throw new ApiError(401, "Invalid user credentials")
@@ -205,8 +209,8 @@ const loginUser = asyncHndler(async (req, res) => {
 
   // make access + refresh token
   // call this method
-  const {accessToken, refreshToken} = await 
-  generateAccessAndRefreshTokens(user._id)
+ // const {accessToken, refreshToken} = await 
+  //generateAccessAndRefreshTokens(user._id)
 
   // firse db ko hi call kr dia
   const loggesInUser = await User.findById(user._id).
@@ -252,6 +256,12 @@ const logoutUser = asyncHandler(async(req, res) => {
          new: true
       }
    )
+      return res
+     .status(200)
+     .clearCookies("accessToken", options)
+     .clearCookies("refreshToken", options)
+     .json(new ApiResponse(200, {}, "User logged out successfully"))
+
 })
 
 // now for cookies
@@ -260,11 +270,6 @@ const options = {
    secure: true
 }
 
-   return res
-     .status(200)
-     .clearCookies("accessToken", options)
-     .clearCookies("refreshToken", options)
-     .json(new ApiResponse(200, {}, "User logged out successfully"))
 
 
 

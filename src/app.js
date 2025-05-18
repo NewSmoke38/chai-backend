@@ -31,17 +31,12 @@ app.use(cookieParser())
 
 import userRouter from './routes/user.routes.js'
 
-
-
-
-
 // routes declaration
-app.use("/api/v1/users", userRouter)       // using middle ware use as we have now seperated files routes and controllers
+app.use("/api/v1/users", userRouter);       // using middle ware use as we have now seperated files routes and controllers
 /// client asks for users, server gives acces to userRouter from userRouter.js
 
 // so yaha se url kaise banega?
 // http://localhost:8000/api/v1/users/register
-
 
 
 

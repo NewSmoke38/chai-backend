@@ -62,9 +62,9 @@ const userSchema = new Schema (
 userSchema.pre("save", async function (next) {        // async is for the time it takes, bro its cryptography hehe
   if(!this.isModified("password")) return next();     // yaha we checked for negative
                                                       // modify hua hai toh we will encrypt it!! 
-  this.password = bcrypt.hash(this.password, 10)
-  next()
-})
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
 
 
 
