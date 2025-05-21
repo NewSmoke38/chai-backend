@@ -6,8 +6,10 @@ import { User } from "../models/user.model.js";
 export const verifyJWT = asyncHandler(async(req, _, 
     next) => {
 try {
-          const token = req.cookies?.access || req.header    // ya toh cookies se token niklega ya toh auth bearer sey=
-          ("Authorization")?.replace("Bearer", "")   // bearer hata ke token mil jaayega
+          const token = 
+          req.cookies?.accessToken ||
+          req.headers.authorization?.replace("Bearer ", " ").trim();   // ya toh cookies se token niklega ya toh auth bearer sey=
+             // bearer hata ke token mil jaayega
    
           if (!token) {
              throw new ApiError(401, "Unauthorized request")
@@ -19,7 +21,7 @@ try {
          .ACCESS_TOKEN_SECRET)   // info like id username and all we gotta find
    
       const user =  await User.findById(decodedToken?._id).select
-         ("-password refreshToken")
+         ("-password -refreshToken")
        
          if (!user) {
             throw new ApiError(401, "Invalid Access Token")
@@ -27,9 +29,10 @@ try {
    
    
        req.user = user;
-       next()              /// middleware verifyJWT ka kaam hogaya so jump to next thingy
-   
+       next()   
+                  /// middleware verifyJWT ka kaam hogaya so jump to next thingy
 } catch (error) {
-   throw new ApiError(401, "Invalid access  thrown")
+console.error(error);   
+   throw new ApiError(401, "Invalid access thrown")
 }
 })
