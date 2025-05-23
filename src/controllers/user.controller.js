@@ -276,7 +276,7 @@ const changeCurrentPassword = asyncHandler(async (req,
      }
 
      user.password = newPassword
-     await user.save{validateBeforeSave: false}
+     await user.save;{validateBeforeSave: false}
      
      return res
      .status (200)
@@ -469,7 +469,65 @@ const channel = await User.aggregate([
    )
 })
 
+// to get watch history
 
+const getWatchHistory = asyncHandler(async(req, res) => {
+   const user = await User.aggregate([
+   {
+      $match: {                     // user mil gya
+         _id: new mongoose.Types.ObjectId(req.user._id)   //is used to ensure that whatever ID you’re passing into the MongoDB aggregation pipeline is an actual ObjectId, not just some string that looks like one.
+          }
+   },
+
+   {
+      $lookup: {
+         from: "videos",
+         localField: "watchHistory",
+         foreignField: "_id",
+         as: "watchHistory",
+         pipeline: [
+            {
+               $lookup: {
+                  from: "users",
+                  localField: "owner",
+                  foreignField: "_id",
+                  as: "owner",
+                  pipeline: [
+                     {
+                        $project: {
+                           fullName: 1,
+                           username: 1,
+                           avatar: 1
+                        }
+                     },
+                     {
+                        $addFields: {
+                           owner: {
+                              $first: "$owner"    // array aata hai so uska first value nikalni pati hai
+                           }
+                        }
+                     }
+                  ]
+               }                  // user and video model se we are playing here
+                                  // so basically we take the watchhistory from the user and then allll the documents from video model will come
+                                  // then we lookup to all these docs in videos model
+                                  // then owner doc again stucks and needs user again for info so we use a sub pipeline and go to user again
+            }
+         ]
+      }
+   }
+  ])
+
+  return res
+  .status(200)
+  .json(
+   new ApiResponse(
+      200,
+      user[0].watchHistory,             // first value nikal ke dete hai [0]
+      "Watch history fetched successfully"
+   )                                   // pura user kyon doge, only give watchHistory
+  )
+})
 
 
 
@@ -489,5 +547,6 @@ export {
    updateAccountDetails,
    updateUserAvatar,
    updateUserCoverImage,
-   getUserChannelProfile
+   getUserChannelProfile,
+   getWatchHistory
 };
