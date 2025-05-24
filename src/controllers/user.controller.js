@@ -1,9 +1,10 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/ApiError.js"
-import { User } from "../models/user.model.js"
-import { uploadOnCloudinary } from "../utils/cloudinary.js"
+import { ApiError } from "../utils/ApiError.js";
+import { User } from "../models/user.model.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 
 const generateAccessAndRefreshTokens = async (userId) => {
@@ -191,8 +192,8 @@ const logoutUser = asyncHandler(async (req, res) => {
    await User.findByIdAndUpdate(
       req.user._id,
       {
-         $set: {
-            refreshToken: undefined      // refresh token toh gayab
+         $unset: {
+            refreshToken: 1     // this removes the field from the document
          }
       },
       {
@@ -216,7 +217,7 @@ const options = {
 
 // user will send refresh token to get another access token w/o logging in for multiple times
 const refreshAccessToken = asyncHandler(async (req, res) => {
-   const incoming = req.cookie.refreshToken || req.body.refreshToken
+   const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
 
    if (!incomingRefreshToken) {
       throw new ApiError(401, "Unauthorized request")
@@ -224,17 +225,17 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       // user ke bheje hue refresh Token ko decode krlenge
 
 try {
-      const deodedToken = jwt.verify(
+      const decodedToken = jwt.verify(
          incomingRefreshToken,
          process.env.REFRESH_TOKEN_SECRET
       )
-      const user = await user.findById(decodedToken?._id)
+      const user = await User.findById(decodedToken?._id)
    
          if (!user) {
          throw new ApiError(401, "Invalid Refresh Token")
       }
       // refresh token sent by user must match the refresh token in our database
-       if (incomingRefreshToken !== user?.refreshtoken) {
+       if (incomingRefreshToken !== user?.refreshToken) {
          throw new ApiError(401, "Refresh token is expired or used")
        }
       // if matches then generate a new refresh token for that user
@@ -248,7 +249,7 @@ try {
        return res
        .status(200)
        .cookie("accessToken", accessToken, options)
-       .cookie("refreshToken", accessToken, options)
+       .cookie("refreshToken", newRefreshToken, options)
        .json(
          new ApiResponse(
             200,
@@ -262,6 +263,8 @@ try {
    throw new ApiError(401, error?.message || 
       "Invalid refresh token")
 }}) 
+
+
 
 const changeCurrentPassword = asyncHandler(async (req,
     res) => {
@@ -436,10 +439,11 @@ const channel = await User.aggregate([
                $size: "$subscribedTo"
             },
             isSubscribed: {                 // subcribe button to show true or false if subscribed
-               $condition: {
-                  if: {$in: [req.user?._id, "$subscribers.subscriber"]},
-                  else: false
-               }
+               $cond: [
+                 {$in: [req.user?._id, "$subscribers.subscriber"] },
+                  true,
+                  false
+               ]
             }
             
          }

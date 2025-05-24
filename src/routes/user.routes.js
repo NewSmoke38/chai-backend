@@ -51,7 +51,7 @@ router.route("/update-account").patch(verifyJWT, updateAccountDetails)   // patc
 
 router.route("/update-avatar").patch(verifyJWT, upload.single("avatar"), updateUserAvatar)   // yaha pr url ki baat hogyi
 
-router.route("/cover-image").patch(verifyJWT, upload.single("/coverImage"), updateUserCoverImage)
+router.route("/cover-image").patch(verifyJWT, upload.single("coverImage"), updateUserCoverImage)
 
 router.route("/c/:username").get(verifyJWT, getUserChannelProfile)     //because params is used there
 
